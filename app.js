@@ -6,11 +6,11 @@ const posts=[
  {title:'Random Thoughts at 2 AM',date:'2025.07.28',category:'Random',excerpt:'The notes that only make sense when the world is quiet.'}
 ];
 const photos = [
-  { title: 'Stillness', src: 'assets/photos/image1.jpeg' },
-  { title: 'Sun through leaves', src: 'assets/photos/image2.jpeg' },
-  { title: 'Temple tree', src: 'assets/photos/image3.jpeg' },
-  { title: 'Hampi horses', src: 'assets/photos/image4.jpeg' },
-  { title: 'Moon through trees', src: 'assets/photos/image5.jpeg' }
+  { title: 'Faith', src: 'assets/photos/image1.jpeg' },
+  { title: 'Peace', src: 'assets/photos/image2.jpeg' },
+  { title: 'Nature', src: 'assets/photos/image3.jpeg' },
+  { title: 'Calm', src: 'assets/photos/image4.jpeg' },
+  { title: 'Beauty', src: 'assets/photos/image5.jpeg' }
 ];
 document.querySelector('#photo-grid').innerHTML = photos.map((p, i) => `
   <button class="photo" data-index="${i}">
