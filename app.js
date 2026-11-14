@@ -184,7 +184,7 @@ const equalizer = document.querySelector('#equalizer');
 const musicLine = document.querySelector('.music .line');
 const progressB = document.querySelector('.music .line b');
 
-const audio = new Audio(encodeURI('assets/Melanie Martinez - Play Date [Official Lyric Video]_320p.mp3'));
+const audio = document.querySelector('#bg-audio') || new Audio(encodeURI('assets/Melanie Martinez - Play Date [Official Lyric Video]_320p.mp3'));
 audio.preload = 'auto';
 
 audio.onerror = (e) => {
@@ -216,6 +216,8 @@ if (musicLine) {
                     isPlaying = true;
                     if (playPauseBtn) playPauseBtn.innerHTML = pauseSvg;
                     if (equalizer) equalizer.classList.add('playing');
+                }).catch(err => {
+                    console.error("Seek playback failed:", err);
                 });
             }
         }
@@ -236,6 +238,7 @@ function toggleOrRandomPlay() {
             if (equalizer) equalizer.classList.add('playing');
         }).catch(err => {
             console.error("Audio playback failed:", err);
+            alert("Could not play audio. Please ensure browser permissions allow audio playback.");
         });
     }
 }
