@@ -184,8 +184,12 @@ const equalizer = document.querySelector('#equalizer');
 const musicLine = document.querySelector('.music .line');
 const progressB = document.querySelector('.music .line b');
 
-const audio = new Audio('assets/Melanie Martinez - Play Date [Official Lyric Video]_320p.mp3');
-audio.preload = 'metadata';
+const audio = new Audio(encodeURI('assets/Melanie Martinez - Play Date [Official Lyric Video]_320p.mp3'));
+audio.preload = 'auto';
+
+audio.onerror = (e) => {
+    console.error("Audio loading error:", audio.error);
+};
 let isPlaying = false;
 
 const playSvg = '<svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" style="display: block; transform: translateX(1.5px);"><path d="M1 1L11 7L1 13V1Z"/></svg>';
