@@ -784,71 +784,57 @@ if (menu && nav) {
 }
 
 // ============================================================================
-// 11. SHARED FORMSUBMIT SENDER (WITH JSON + AUTOMATIC FALLBACK)
+// 11. HELPER FOR FORMSUBMIT JSON AJAX SUBMISSIONS
 // ============================================================================
-async function submitToFormSubmit(form, onSuccess) {
-    const rawData = new FormData(form);
+const toast = document.querySelector('#toast');
+
+function showToast(msg, duration = 4500) {
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
+async function submitToFormSubmit(formEl, successMsg) {
+    const rawData = new FormData(formEl);
     const payload = {};
     rawData.forEach((value, key) => {
-        if (value !== null && String(value).trim() !== '') {
+        if (value && String(value).trim() !== '') {
             payload[key] = String(value).trim();
         }
     });
 
-    // Ensure a fallback message field exists (FormSubmit AJAX expects standard fields)
-    if (!payload.message && payload.song_title) {
-        payload.message = `Song suggestion: ${payload.song_title}`
-            + (payload.song_link ? ` | Link: ${payload.song_link}` : '')
-            + (payload.suggested_by ? ` | From: ${payload.suggested_by}` : '');
+    const response = await fetch('https://formsubmit.co/ajax/jeevannayyar0@gmail.com', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && (result.success === 'true' || result.success === true)) {
+        showToast(successMsg);
+        return true;
     }
 
-    try {
-        const response = await fetch('https://formsubmit.co/ajax/jeevannayyar0@gmail.com', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        let result = {};
-        try {
-            result = await response.json();
-        } catch (_) {}
-
-        if (response.ok && (result.success === 'true' || result.success === true)) {
-            onSuccess();
-            return;
-        }
-
-        // If FormSubmit returns an activation notice or error message, surface it clearly
-        const msg = (result && result.message) ? String(result.message) : '';
-        if (msg.toLowerCase().includes('activate') || msg.toLowerCase().includes('confirm')) {
-            throw new Error('NEEDS_ACTIVATION');
-        }
-        throw new Error(msg || `HTTP_${response.status}`);
-    } catch (err) {
-        if (err.message === 'NEEDS_ACTIVATION') {
-            throw err;
-        }
-        // Fallback: submit via hidden iframe / no-cors standard form POST so ad-blockers or CORS preflights never block delivery
-        await fetch('https://formsubmit.co/jeevannayyar0@gmail.com', {
-            method: 'POST',
-            mode: 'no-cors',
-            body: rawData
-        });
-        onSuccess();
+    const serverMsg = (result && result.message) ? String(result.message) : '';
+    if (serverMsg.toLowerCase().includes('activat')) {
+        showToast('Check jeevannayyar0@gmail.com to activate FormSubmit first!', 6000);
+    } else if (serverMsg) {
+        showToast(serverMsg, 5000);
+    } else {
+        throw new Error('Submission failed');
     }
+    return false;
 }
 
-// ============================================================================
-// 12. CONTACT FORM & SUGGEST SONG FORM HANDLERS
-// ============================================================================
+// Contact Form Submission
 const contactForm = document.querySelector('#contact-form');
-const toast = document.querySelector('#toast');
-
-if (contactForm && toast) {
+if (contactForm) {
     contactForm.onsubmit = async (e) => {
         e.preventDefault();
         const submitBtn = contactForm.querySelector('button[type="submit"]');
@@ -859,28 +845,24 @@ if (contactForm && toast) {
         }
 
         try {
-            await submitToFormSubmit(contactForm, () => {
-                toast.textContent = 'Message sent to Jeevan! ✨';
-                toast.classList.add('show');
-                contactForm.reset();
-            });
+            const ok = await submitToFormSubmit(contactForm, 'Message sent to Jeevan! ✨');
+            if (ok) contactForm.reset();
         } catch (err) {
             console.error('Contact form error:', err);
-            toast.textContent = err.message === 'NEEDS_ACTIVATION'
-                ? 'Open Gmail to activate FormSubmit first!'
-                : 'Could not send right now — try again!';
-            toast.classList.add('show');
+            showToast('Open the deployed Vercel URL (or check Gmail activation) to send.');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             }
-            setTimeout(() => toast.classList.remove('show'), 4500);
         }
     };
 }
 
-if (suggestSongForm && toast) {
+// ============================================================================
+// 12. SUGGEST SONG FORM SUBMISSION VIA FORMSUBMIT JSON AJAX
+// ============================================================================
+if (suggestSongForm) {
     suggestSongForm.onsubmit = async (e) => {
         e.preventDefault();
         const submitBtn = suggestSongForm.querySelector('button[type="submit"]');
@@ -891,24 +873,19 @@ if (suggestSongForm && toast) {
         }
 
         try {
-            await submitToFormSubmit(suggestSongForm, () => {
-                toast.textContent = 'Song suggestion sent to Jeevan! ♫';
-                toast.classList.add('show');
+            const ok = await submitToFormSubmit(suggestSongForm, 'Song suggestion sent to Jeevan! ♫');
+            if (ok) {
                 suggestSongForm.reset();
                 closeSuggestModal();
-            });
+            }
         } catch (err) {
             console.error('Song suggestion error:', err);
-            toast.textContent = err.message === 'NEEDS_ACTIVATION'
-                ? 'Open Gmail to activate FormSubmit first!'
-                : 'Could not send right now — try again!';
-            toast.classList.add('show');
+            showToast('Open the deployed Vercel URL (or check Gmail activation) to send.');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             }
-            setTimeout(() => toast.classList.remove('show'), 4500);
         }
     };
 }
