@@ -1103,6 +1103,29 @@ h1 span {
     }
 }
 
+
+.ytm-link {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple);
+    background: var(--soft);
+    padding: 3px 9px;
+    border-radius: 999px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.ytm-link:hover {
+    background: var(--purple);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.music.is-live-scrobble #music-status-label {
+    color: #28a745;
+}
+
 /* Toast Notification */
 .toast {
     position: fixed;

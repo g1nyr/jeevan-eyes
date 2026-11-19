@@ -1,4 +1,16 @@
 // ============================================================================
+// 0. LIVE SCROBBLE CONFIG (BitChord / YouTube Music -> ListenBrainz or Last.fm)
+// ============================================================================
+// Fill in EITHER listenbrainzUsername OR lastfmUsername + lastfmApiKey below.
+// Leave blank ('') to use your local shuffled MP3 playlist by default.
+const LIVE_MUSIC_CONFIG = {
+    listenbrainzUsername: 'g1nyr', // Connected to BitChord / ListenBrainz
+    lastfmUsername: '',       // e.g. 'jeevannayyar'
+    lastfmApiKey: '',         // Free key from https://www.last.fm/api/account/create
+    pollIntervalMs: 45000     // Refresh live/last-played track every 45 seconds
+};
+
+// ============================================================================
 // 1. BLOG POSTS DATA (Add new posts at the top of this array to update your site!)
 // ============================================================================
 const blogPosts = [
@@ -426,9 +438,11 @@ if (mapEl) {
 }
 
 // ============================================================================
-// 9. SHUFFLE PLAYLIST PLAYER WITH TIMESTAMPS & SPACEBAR TOGGLE
+// 9. LIVE SCROBBLE (BITCHORD / YT MUSIC) + 30S PREVIEW + SHUFFLE MP3 PLAYER
 // ============================================================================
 const musicCard = document.querySelector('#music-card');
+const musicStatusLabel = document.querySelector('#music-status-label');
+const ytmExternalLink = document.querySelector('#ytm-external-link');
 const playPauseBtn = document.querySelector('#play-pause-btn');
 const nextTrackBtn = document.querySelector('#next-track-btn');
 const trackCoverEl = document.querySelector('#track-cover');
@@ -446,6 +460,9 @@ audio.preload = 'metadata';
 let currentTrackIndex = 0;
 let shuffledQueue = [];
 let isPlaying = false;
+let liveScrobbleTrack = null; // Holds live/last-played track when scrobbling is configured
+let showingLiveTrack = false;
+let lastScrobbleSignature = '';
 
 const playSvg = '<svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" style="display: block; transform: translateX(1.5px);"><path d="M1 1L11 7L1 13V1Z"/></svg>';
 const pauseSvg = '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" style="display: block;"><rect width="3" height="14" rx="1"/><rect x="7" width="3" height="14" rx="1"/></svg>';
@@ -476,41 +493,198 @@ function setPlayingUI(playing) {
     if (musicCard) musicCard.classList.toggle('is-playing', playing);
 }
 
-function loadTrack(index, autoplay = false) {
-    currentTrackIndex = ((index % playlist.length) + playlist.length) % playlist.length;
-    const track = playlist[currentTrackIndex];
+function updateExternalYtmLink(title, artist) {
+    if (!ytmExternalLink) return;
+    const query = encodeURIComponent(`${title} ${artist}`.trim());
+    ytmExternalLink.href = `https://music.youtube.com/search?q=${query}`;
+}
 
-    audio.src = encodeURI(track.src);
-    audio.load();
+function applyTrackToPlayer(track, options = {}) {
+    const { autoplay = false, isLive = false, isNowPlaying = false } = options;
+    showingLiveTrack = isLive;
 
-    if (trackCoverEl) { trackCoverEl.src = track.cover; trackCoverEl.alt = `${track.title} cover`; }
+    if (musicCard) {
+        musicCard.classList.toggle('is-live-scrobble', isLive && isNowPlaying);
+    }
+    if (musicStatusLabel) {
+        if (isLive) {
+            musicStatusLabel.textContent = isNowPlaying ? '● LIVE ON YT MUSIC' : '♫ LAST PLAYED';
+        } else {
+            musicStatusLabel.textContent = '♫ CURRENTLY LISTENING';
+        }
+    }
+
+    if (trackCoverEl) {
+        trackCoverEl.src = track.cover || 'assets/photos/cover-playdate.jpg';
+        trackCoverEl.alt = `${track.title} cover`;
+    }
     if (trackTitleEl) {
         trackTitleEl.textContent = track.title;
         trackTitleEl.title = `${track.title} — ${track.artist}`;
     }
-    if (trackArtistEl) trackArtistEl.textContent = track.artist;
+    if (trackArtistEl) {
+        trackArtistEl.textContent = track.artist;
+    }
+    updateExternalYtmLink(track.title, track.artist);
+
     if (progressB) progressB.style.width = '0%';
     if (currentTimeEl) currentTimeEl.textContent = '0:00';
     if (totalTimeEl) totalTimeEl.textContent = '0:00';
 
-    if (autoplay) {
-        audio.play().then(() => {
-            setPlayingUI(true);
-        }).catch(err => {
-            console.error('Playback failed:', err);
+    if (track.src) {
+        audio.src = track.src.startsWith('http') ? track.src : encodeURI(track.src);
+        audio.load();
+        if (autoplay) {
+            audio.play().then(() => setPlayingUI(true)).catch(err => {
+                console.warn('Autoplay blocked by browser:', err);
+                setPlayingUI(false);
+            });
+        } else {
             setPlayingUI(false);
-        });
+        }
     } else {
+        // No 30s preview URL found for this live scrobble; keep local MP3 ready if user presses Play
+        const fallback = playlist[currentTrackIndex] || playlist[0];
+        audio.src = encodeURI(fallback.src);
+        audio.load();
         setPlayingUI(false);
     }
 }
 
+function loadLocalTrack(index, autoplay = false) {
+    currentTrackIndex = ((index % playlist.length) + playlist.length) % playlist.length;
+    const track = playlist[currentTrackIndex];
+    applyTrackToPlayer(track, { autoplay, isLive: false, isNowPlaying: false });
+}
+
 function playNextShuffled(autoplay = true) {
+    // If currently viewing a live scrobble and user clicks Next, switch into shuffled local playlist
     if (shuffledQueue.length === 0) {
-        shuffledQueue = buildShuffledQueue(currentTrackIndex);
+        shuffledQueue = buildShuffledQueue(showingLiveTrack ? -1 : currentTrackIndex);
     }
     const nextIdx = shuffledQueue.shift();
-    loadTrack(nextIdx, autoplay);
+    loadLocalTrack(nextIdx, autoplay);
+}
+
+// Lookup 30-second audio preview + high-res cover via iTunes Search API (no API key needed)
+async function enrichWithItunesPreview(title, artist, existingCover = '') {
+    try {
+        const term = encodeURIComponent(`${title} ${artist}`.trim());
+        const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`);
+        if (!res.ok) throw new Error('iTunes search failed');
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+            const hit = data.results[0];
+            const hiResCover = hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100bb', '400x400bb') : existingCover;
+            return {
+                previewUrl: hit.previewUrl || '',
+                cover: existingCover || hiResCover || 'assets/photos/cover-playdate.jpg'
+            };
+        }
+    } catch (err) {
+        console.warn('iTunes preview lookup failed:', err);
+    }
+    return {
+        previewUrl: '',
+        cover: existingCover || 'assets/photos/cover-playdate.jpg'
+    };
+}
+
+// Fetch live / last-played song from ListenBrainz or Last.fm
+async function syncLiveScrobble() {
+    const lbUser = (LIVE_MUSIC_CONFIG.listenbrainzUsername || '').trim();
+    const lfmUser = (LIVE_MUSIC_CONFIG.lastfmUsername || '').trim();
+    const lfmKey = (LIVE_MUSIC_CONFIG.lastfmApiKey || '').trim();
+
+    if (!lbUser && (!lfmUser || !lfmKey)) return;
+
+    try {
+        let title = '';
+        let artist = '';
+        let isNowPlaying = false;
+        let cover = '';
+
+        if (lbUser) {
+            // 1. Check ListenBrainz playing-now first, then latest listen
+            const nowRes = await fetch(`https://api.listenbrainz.org/1/user/${encodeURIComponent(lbUser)}/playing-now`);
+            const nowData = nowRes.ok ? await nowRes.json() : null;
+            const nowListens = nowData?.payload?.listens || [];
+
+            if (nowListens.length > 0 && nowListens[0].track_metadata) {
+                title = nowListens[0].track_metadata.track_name || '';
+                artist = nowListens[0].track_metadata.artist_name || '';
+                isNowPlaying = true;
+            } else {
+                const histRes = await fetch(`https://api.listenbrainz.org/1/user/${encodeURIComponent(lbUser)}/listens?count=1`);
+                const histData = histRes.ok ? await histRes.json() : null;
+                const histListens = histData?.payload?.listens || [];
+                if (histListens.length > 0 && histListens[0].track_metadata) {
+                    title = histListens[0].track_metadata.track_name || '';
+                    artist = histListens[0].track_metadata.artist_name || '';
+                    isNowPlaying = false;
+                }
+            }
+        } else if (lfmUser && lfmKey) {
+            // 2. Check Last.fm user.getrecenttracks
+            const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(lfmUser)}&api_key=${encodeURIComponent(lfmKey)}&format=json&limit=1`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                const tracks = data?.recenttracks?.track || [];
+                const latest = Array.isArray(tracks) ? tracks[0] : tracks;
+                if (latest) {
+                    title = latest.name || '';
+                    artist = (latest.artist && (latest.artist['#text'] || latest.artist.name)) || '';
+                    isNowPlaying = latest['@attr']?.nowplaying === 'true';
+                    const imgs = latest.image || [];
+                    const xl = imgs.find(i => i.size === 'extralarge') || imgs[imgs.length - 1];
+                    if (xl && xl['#text'] && !xl['#text'].includes('2a96cbd8b46e442fc41c2b86b821562f')) {
+                        cover = xl['#text'];
+                    }
+                }
+            }
+        }
+
+        if (!title || !artist) return;
+
+        const signature = `${title}::${artist}::${isNowPlaying}`;
+        if (signature === lastScrobbleSignature) return;
+        lastScrobbleSignature = signature;
+
+        // Check if this song matches one of your full local MP3s first!
+        const localMatch = playlist.find(p =>
+            p.title.toLowerCase() === title.toLowerCase() ||
+            title.toLowerCase().includes(p.title.toLowerCase())
+        );
+
+        if (localMatch) {
+            liveScrobbleTrack = {
+                title,
+                artist,
+                cover: localMatch.cover,
+                src: localMatch.src
+            };
+        } else {
+            const enriched = await enrichWithItunesPreview(title, artist, cover);
+            liveScrobbleTrack = {
+                title,
+                artist,
+                cover: enriched.cover,
+                src: enriched.previewUrl
+            };
+        }
+
+        // Only update player UI automatically if user isn't actively playing another song
+        if (!isPlaying) {
+            applyTrackToPlayer(liveScrobbleTrack, {
+                autoplay: false,
+                isLive: true,
+                isNowPlaying
+            });
+        }
+    } catch (err) {
+        console.warn('Live scrobble sync error:', err);
+    }
 }
 
 audio.onloadedmetadata = () => {
@@ -529,7 +703,7 @@ audio.ontimeupdate = () => {
 };
 
 audio.onerror = () => {
-    console.error('Audio loading error:', audio.error);
+    console.warn('Audio error, falling back to local shuffled playlist');
     setPlayingUI(false);
 };
 
@@ -561,7 +735,10 @@ function togglePlayPause() {
 }
 
 if (musicCard) {
-    musicCard.onclick = () => togglePlayPause();
+    musicCard.onclick = (e) => {
+        if (e.target.closest('a')) return; // Allow clicking YT Music ↗ link without toggling play
+        togglePlayPause();
+    };
 }
 
 if (playPauseBtn) {
@@ -578,14 +755,16 @@ if (nextTrackBtn) {
     };
 }
 
-// Automatically shuffle to next song when current finishes
+// When current track (or 30s preview) ends, automatically shuffle into local playlist
 audio.onended = () => {
     playNextShuffled(true);
 };
 
-// Initialize with a shuffled song on load
+// Initialize with a shuffled local song first, then check live scrobble if configured
 shuffledQueue = buildShuffledQueue();
 playNextShuffled(false);
+syncLiveScrobble();
+setInterval(syncLiveScrobble, LIVE_MUSIC_CONFIG.pollIntervalMs || 45000);
 
 // ============================================================================
 // 10. NAVIGATION TAB ROUTING
