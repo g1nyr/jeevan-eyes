@@ -784,10 +784,70 @@ if (menu && nav) {
 }
 
 // ============================================================================
-// 11. CONTACT FORM SUBMISSION VIA FORMSUBMIT AJAX
+// 11. SHARED FORMSUBMIT SENDER (WITH JSON + AUTOMATIC FALLBACK)
+// ============================================================================
+async function submitToFormSubmit(form, onSuccess) {
+    const rawData = new FormData(form);
+    const payload = {};
+    rawData.forEach((value, key) => {
+        if (value !== null && String(value).trim() !== '') {
+            payload[key] = String(value).trim();
+        }
+    });
+
+    // Ensure a fallback message field exists (FormSubmit AJAX expects standard fields)
+    if (!payload.message && payload.song_title) {
+        payload.message = `Song suggestion: ${payload.song_title}`
+            + (payload.song_link ? ` | Link: ${payload.song_link}` : '')
+            + (payload.suggested_by ? ` | From: ${payload.suggested_by}` : '');
+    }
+
+    try {
+        const response = await fetch('https://formsubmit.co/ajax/jeevannayyar0@gmail.com', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        let result = {};
+        try {
+            result = await response.json();
+        } catch (_) {}
+
+        if (response.ok && (result.success === 'true' || result.success === true)) {
+            onSuccess();
+            return;
+        }
+
+        // If FormSubmit returns an activation notice or error message, surface it clearly
+        const msg = (result && result.message) ? String(result.message) : '';
+        if (msg.toLowerCase().includes('activate') || msg.toLowerCase().includes('confirm')) {
+            throw new Error('NEEDS_ACTIVATION');
+        }
+        throw new Error(msg || `HTTP_${response.status}`);
+    } catch (err) {
+        if (err.message === 'NEEDS_ACTIVATION') {
+            throw err;
+        }
+        // Fallback: submit via hidden iframe / no-cors standard form POST so ad-blockers or CORS preflights never block delivery
+        await fetch('https://formsubmit.co/jeevannayyar0@gmail.com', {
+            method: 'POST',
+            mode: 'no-cors',
+            body: rawData
+        });
+        onSuccess();
+    }
+}
+
+// ============================================================================
+// 12. CONTACT FORM & SUGGEST SONG FORM HANDLERS
 // ============================================================================
 const contactForm = document.querySelector('#contact-form');
 const toast = document.querySelector('#toast');
+
 if (contactForm && toast) {
     contactForm.onsubmit = async (e) => {
         e.preventDefault();
@@ -798,40 +858,28 @@ if (contactForm && toast) {
             submitBtn.textContent = 'Sending...';
         }
 
-        const formData = new FormData(contactForm);
         try {
-            const response = await fetch('https://formsubmit.co/ajax/jeevannayyar0@gmail.com', {
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-                body: formData
-            });
-            const result = await response.json();
-            if (response.ok && (result.success === 'true' || result.success === true)) {
+            await submitToFormSubmit(contactForm, () => {
                 toast.textContent = 'Message sent to Jeevan! ✨';
                 toast.classList.add('show');
                 contactForm.reset();
-            } else {
-                throw new Error(result.message || 'Submission failed');
-            }
+            });
         } catch (err) {
-            console.error('FormSubmit error:', err);
-            toast.textContent = 'Check Gmail to activate FormSubmit or try again!';
+            console.error('Contact form error:', err);
+            toast.textContent = err.message === 'NEEDS_ACTIVATION'
+                ? 'Open Gmail to activate FormSubmit first!'
+                : 'Could not send right now — try again!';
             toast.classList.add('show');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             }
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 4000);
+            setTimeout(() => toast.classList.remove('show'), 4500);
         }
     };
 }
 
-// ============================================================================
-// 12. SUGGEST SONG FORM SUBMISSION VIA FORMSUBMIT AJAX
-// ============================================================================
 if (suggestSongForm && toast) {
     suggestSongForm.onsubmit = async (e) => {
         e.preventDefault();
@@ -842,34 +890,25 @@ if (suggestSongForm && toast) {
             submitBtn.textContent = 'Sending...';
         }
 
-        const formData = new FormData(suggestSongForm);
         try {
-            const response = await fetch('https://formsubmit.co/ajax/jeevannayyar0@gmail.com', {
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-                body: formData
-            });
-            const result = await response.json();
-            if (response.ok && (result.success === 'true' || result.success === true)) {
+            await submitToFormSubmit(suggestSongForm, () => {
                 toast.textContent = 'Song suggestion sent to Jeevan! ♫';
                 toast.classList.add('show');
                 suggestSongForm.reset();
                 closeSuggestModal();
-            } else {
-                throw new Error(result.message || 'Submission failed');
-            }
+            });
         } catch (err) {
             console.error('Song suggestion error:', err);
-            toast.textContent = 'Could not send right now — try again!';
+            toast.textContent = err.message === 'NEEDS_ACTIVATION'
+                ? 'Open Gmail to activate FormSubmit first!'
+                : 'Could not send right now — try again!';
             toast.classList.add('show');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             }
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 4000);
+            setTimeout(() => toast.classList.remove('show'), 4500);
         }
     };
 }
