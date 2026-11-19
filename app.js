@@ -70,22 +70,63 @@ const photos = [
     { src: 'assets/photos/image5.jpeg', title: 'Wandering Boulders' }
 ];
 
+function shuffleArray(arr) {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+}
+
+let shuffledPhotos = shuffleArray(photos);
 let active = 0;
 const slide = document.querySelector('#slide');
-const counter = document.querySelector('#counter');
 const caption = document.querySelector('#caption');
 const carouselBox = document.querySelector('#carousel-box');
 
-function updateSlide(index) {
-    active = (index + photos.length) % photos.length;
-    slide.style.opacity = '0.2';
-    setTimeout(() => {
-        slide.src = photos[active].src;
-        slide.alt = photos[active].title;
-        caption.textContent = photos[active].title;
-        counter.textContent = `0${active + 1} / 05`;
-        slide.style.opacity = '1';
-    }, 150);
+function updateSlide(index, immediate = false) {
+    if (index >= shuffledPhotos.length) {
+        const lastShown = shuffledPhotos[shuffledPhotos.length - 1];
+        shuffledPhotos = shuffleArray(photos);
+        if (shuffledPhotos.length > 1 && shuffledPhotos[0].src === lastShown.src) {
+            [shuffledPhotos[0], shuffledPhotos[1]] = [shuffledPhotos[1], shuffledPhotos[0]];
+        }
+        active = 0;
+    } else if (index < 0) {
+        active = (index + shuffledPhotos.length) % shuffledPhotos.length;
+    } else {
+        active = index;
+    }
+
+    const applyPhoto = () => {
+        if (slide) {
+            slide.src = shuffledPhotos[active].src;
+            slide.alt = shuffledPhotos[active].title;
+            slide.style.opacity = '1';
+        }
+        if (caption) {
+            caption.textContent = shuffledPhotos[active].title;
+        }
+    };
+
+    if (immediate || !slide) {
+        applyPhoto();
+    } else {
+        slide.style.opacity = '0.2';
+        setTimeout(applyPhoto, 150);
+    }
+}
+
+// Initialize carousel with a random photo immediately
+updateSlide(0, true);
+
+// Also randomize the dashboard photo card preview on load
+const dashboardPhotoImg = document.querySelector('.photo-card img');
+if (dashboardPhotoImg && shuffledPhotos.length > 1) {
+    const previewPhoto = shuffledPhotos[1];
+    dashboardPhotoImg.src = previewPhoto.src;
+    dashboardPhotoImg.alt = previewPhoto.title;
 }
 
 let carouselInterval = setInterval(() => {
@@ -324,13 +365,14 @@ function updateISTClock() {
         timeZone: 'Asia/Kolkata',
         hour: '2-digit',
         minute: '2-digit',
+        second: '2-digit',
         hour12: true
     }).format(now).toUpperCase();
     istClockEl.textContent = `${formatted} IST`;
 }
 
 updateISTClock();
-setInterval(updateISTClock, 15000);
+setInterval(updateISTClock, 1000);
 
 function describeWeatherCode(code) {
     if (code === 0) return { icon: '☀️', text: 'Clear sky' };

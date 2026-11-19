@@ -265,8 +265,9 @@ h1 span {
     background: linear-gradient(transparent, #000a);
     color: #fff;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: flex-end;
+    text-align: center;
     pointer-events: none;
 }
 
