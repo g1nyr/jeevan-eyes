@@ -57,6 +57,9 @@ header {
     font: 700 39px/.75 Caveat, cursive;
     color: var(--ink);
     text-decoration: none;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
 }
 
 .logo em {
@@ -64,10 +67,20 @@ header {
     color: var(--purple);
 }
 
-.logo b {
-    font: 14px 'DM Sans';
-    vertical-align: top;
-    color: #e98db5;
+.eyes-word-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.eyes-logo-img {
+    position: absolute;
+    bottom: 82%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 17px;
+    height: auto;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.14));
 }
 
 nav {
@@ -153,7 +166,7 @@ aside {
     width: 135px;
     height: 135px;
     object-fit: cover;
-    border-radius: 18px;
+    border-radius: 30px;
     border: 5px solid var(--soft);
     cursor: pointer;
     transition: transform 0.3s;
@@ -194,7 +207,7 @@ h1 span {
     place-items: center;
     width: 31px;
     height: 31px;
-    border-radius: 9px;
+    border-radius: 12px;
     color: var(--ink);
     background: var(--soft);
     font-weight: 700;
@@ -223,7 +236,7 @@ h1 span {
 
 .carousel {
     margin-top: 56px;
-    border-radius: 18px;
+    border-radius: 30px;
     overflow: hidden;
     position: relative;
     box-shadow: var(--shadow);
@@ -313,7 +326,7 @@ h1 span {
 .card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 22px;
+    border-radius: 28px;
     padding: 24px;
     box-shadow: var(--shadow);
     display: flex;
@@ -352,6 +365,30 @@ h1 span {
     100% { box-shadow: 0 0 0 0 #34c75900; }
 }
 
+.weather-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.weather-top .label {
+    margin: 0;
+}
+
+.ist-clock {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple);
+    background: var(--soft);
+    padding: 4px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.3px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 .weather strong {
     font-size: 38px;
     font-weight: 700;
@@ -359,7 +396,7 @@ h1 span {
     color: var(--ink);
 }
 
-.weather span {
+.weather > span {
     color: var(--muted);
     font-size: 14px;
 }
@@ -371,49 +408,32 @@ h1 span {
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
 }
 
 #map {
     width: 100%;
-    height: 140px;
-    border-radius: 16px;
+    flex: 1;
+    min-height: 150px;
+    border-radius: 22px;
     margin-top: 10px;
+    overflow: hidden;
+    background: var(--soft);
 }
 
-.map-overlay {
-    position: absolute;
-    bottom: 24px;
-    left: 24px;
-    z-index: 10;
-    display: flex;
-    gap: 8px;
-    pointer-events: auto;
+#map .leaflet-tile {
+    outline: 1px solid transparent;
 }
 
-.map-overlay button {
-    background: var(--card);
-    color: var(--ink);
-    border: 1px solid var(--border);
-    padding: 8px 14px;
-    border-radius: 12px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transition: transform 0.2s, background 0.2s, color 0.2s;
-    backdrop-filter: blur(4px);
-}
-
-.map-overlay button:hover {
-    transform: translateY(-2px);
-    background: var(--purple);
-    color: #fff;
-}
 
 .cat-pin {
+    background: transparent;
+    border: none;
+}
+
+.cat-pin-inner {
     font-size: 26px;
+    width: 36px;
+    height: 36px;
     display: grid;
     place-items: center;
     animation: cat-bounce 2s infinite ease-in-out;
@@ -425,44 +445,91 @@ h1 span {
     50% { transform: translateY(-6px) scale(1.08); }
 }
 
-.music .album {
-    font: 700 21px Caveat, cursive;
-    background: var(--soft);
-    color: var(--purple);
-    width: 48px;
-    height: 48px;
-    display: grid;
-    place-items: center;
-    border-radius: 14px;
+.music-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 12px;
+}
+
+.music-header .label {
+    margin: 0;
+}
+
+.track-counter {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple);
+    background: var(--soft);
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+}
+
+.music .album {
+    background: var(--soft);
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    box-shadow: 0 4px 12px rgba(139, 107, 190, 0.22);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.music.is-playing .album {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(139, 107, 190, 0.22);
+}
+
+.music .album img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .music-info {
     display: flex;
     gap: 14px;
     align-items: center;
+    min-width: 0;
+}
+
+.track-meta {
+    min-width: 0;
+    flex: 1;
 }
 
 .music h2 {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.music span {
+.track-meta span {
+    display: block;
     font-size: 13px;
     color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .player-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     margin-top: 12px;
 }
 
 #play-pause-btn {
-    background: var(--purple);
+    background: linear-gradient(135deg, var(--purple), #a382d8);
+    box-shadow: 0 4px 14px rgba(139, 107, 190, 0.35);
     color: #fff;
     border: none;
     width: 34px;
@@ -477,6 +544,44 @@ h1 span {
 
 #play-pause-btn:hover {
     transform: scale(1.1);
+}
+
+.track-nav-btn {
+    background: var(--soft);
+    color: var(--purple);
+    border: 1px solid var(--border);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.track-nav-btn:hover {
+    background: var(--purple);
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.progress-wrap {
+    margin-top: 12px;
+}
+
+.progress-wrap .line {
+    margin-top: 0;
+}
+
+.time-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
 }
 
 .equalizer {
@@ -572,7 +677,7 @@ h1 span {
     width: 100%;
     height: 120px;
     object-fit: cover;
-    border-radius: 14px;
+    border-radius: 18px;
     margin: 12px 0;
     cursor: pointer;
     transition: transform 0.2s;
@@ -622,7 +727,7 @@ h1 span {
     background: var(--input-bg);
     border: 1px solid var(--border);
     padding: 12px 16px;
-    border-radius: 12px;
+    border-radius: 16px;
     color: var(--ink);
     font: inherit;
     outline: none;
@@ -635,11 +740,13 @@ h1 span {
 }
 
 .chat button {
-    background: var(--purple);
+    background: linear-gradient(135deg, var(--purple), #a382d8);
+    box-shadow: 0 6px 18px rgba(139, 107, 190, 0.28);
+    border-radius: 999px;
     color: #fff;
     border: none;
     padding: 12px;
-    border-radius: 12px;
+    border-radius: 16px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.2s, transform 0.2s;
@@ -653,8 +760,8 @@ h1 span {
 /* Pages / Sections */
 .page {
     display: none;
-    padding: 48px;
-    grid-column: span 3;
+    padding: 36px 44px;
+    align-self: start;
 }
 
 .page.active-page {
@@ -671,7 +778,7 @@ h1 span {
 .blog-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 26px;
     padding: 24px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -718,7 +825,7 @@ h1 span {
     margin: 0;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 30px;
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: transform 0.2s;
@@ -754,7 +861,7 @@ h1 span {
     background: var(--card);
     border: 1px solid var(--border);
     padding: 20px;
-    border-radius: 16px;
+    border-radius: 22px;
     color: var(--muted);
 }
 
@@ -792,7 +899,7 @@ h1 span {
     max-width: 100%;
     max-height: 75vh;
     object-fit: contain;
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: 0 20px 50px #0009;
 }
 
@@ -844,6 +951,157 @@ h1 span {
     transform: translateY(-50%);
 }
 
+/* Full Blog Article Reader Modal */
+.blog-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 12, 24, 0.78);
+    backdrop-filter: blur(8px);
+    z-index: 1100;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.blog-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.blog-modal-dialog {
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 36px;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    transform: translateY(16px);
+    transition: transform 0.25s ease;
+}
+
+.blog-modal.open .blog-modal-dialog {
+    transform: translateY(0);
+}
+
+#blog-modal-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    background: var(--soft);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+#blog-modal-close:hover {
+    background: var(--purple);
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.blog-modal-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.blog-readtime {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.blog-modal-dialog h2 {
+    font-size: 26px;
+    line-height: 1.25;
+    margin: 0 0 20px;
+    color: var(--ink);
+}
+
+.blog-modal-body {
+    color: var(--ink);
+    font-size: 15.5px;
+    line-height: 1.75;
+}
+
+.blog-modal-body p {
+    margin: 0 0 16px;
+    color: var(--muted);
+}
+
+.blog-modal-body p:first-child {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.blog-modal-body blockquote {
+    margin: 20px 0;
+    padding: 14px 18px;
+    border-left: 3px solid var(--purple);
+    background: var(--soft);
+    border-radius: 0 12px 12px 0;
+    color: var(--ink);
+    font-style: italic;
+}
+
+.blog-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+.blog-nav-btn {
+    background: var(--soft);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    padding: 9px 16px;
+    border-radius: 16px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.blog-nav-btn:hover:not(:disabled) {
+    background: var(--purple);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.blog-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .blog-modal-dialog {
+        padding: 24px 20px;
+    }
+    .blog-modal-dialog h2 {
+        font-size: 21px;
+    }
+}
+
 /* Toast Notification */
 .toast {
     position: fixed;
@@ -852,7 +1110,7 @@ h1 span {
     background: var(--purple);
     color: #fff;
     padding: 14px 24px;
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: 0 10px 30px #0004;
     font-weight: 700;
     z-index: 2000;
@@ -881,9 +1139,7 @@ h1 span {
     .map-card, .chat {
         grid-column: span 2;
     }
-    .page {
-        grid-column: span 2;
-    }
+
 }
 
 @media (max-width: 768px) {
@@ -921,6 +1177,5 @@ h1 span {
     }
     .page {
         padding: 24px;
-        grid-column: span 1;
     }
 }
