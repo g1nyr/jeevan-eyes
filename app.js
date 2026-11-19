@@ -63,11 +63,11 @@ const playlist = [
 // 3. PHOTO GALLERY & CAROUSEL
 // ============================================================================
 const photos = [
-    { src: 'assets/photos/image1.jpeg', title: 'Stillness' },
-    { src: 'assets/photos/image2.jpeg', title: 'Sun through leaves' },
-    { src: 'assets/photos/image3.jpeg', title: 'Temple tree' },
-    { src: 'assets/photos/image4.jpeg', title: 'Hampi horses' },
-    { src: 'assets/photos/image5.jpeg', title: 'Moon through trees' }
+    { src: 'assets/photos/image1.jpeg', title: 'Quiet Grace' },
+    { src: 'assets/photos/image2.jpeg', title: 'Breathing Through Leaves' },
+    { src: 'assets/photos/image3.jpeg', title: 'Timeless Roots' },
+    { src: 'assets/photos/image4.jpeg', title: 'Midnight Whisper' },
+    { src: 'assets/photos/image5.jpeg', title: 'Wandering Boulders' }
 ];
 
 let active = 0;
