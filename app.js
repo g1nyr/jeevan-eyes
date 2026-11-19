@@ -688,13 +688,6 @@ function togglePlayPause() {
     }
 }
 
-if (musicCard) {
-    musicCard.onclick = (e) => {
-        if (e.target.closest('a') || e.target.closest('button')) return;
-        window.open(currentLiveTrack.spotifyUrl || 'https://open.spotify.com', '_blank', 'noopener,noreferrer');
-    };
-}
-
 if (playPauseBtn) {
     playPauseBtn.onclick = (e) => {
         e.stopPropagation();
