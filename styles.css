@@ -67,7 +67,7 @@ header {
     color: var(--purple);
 }
 
-.eyes-word-wrap {
+.es-eyes-wrap {
     position: relative;
     display: inline-block;
 }
