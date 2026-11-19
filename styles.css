@@ -1147,6 +1147,135 @@ h1 span {
     color: #28a745;
 }
 
+
+.suggest-song-btn {
+    background: var(--soft);
+    color: var(--purple);
+    border: 1px solid var(--border);
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font: 700 11.5px 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.suggest-song-btn:hover {
+    background: var(--purple);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 107, 190, 0.28);
+}
+
+/* Suggest Song Modal */
+.suggest-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 11, 16, 0.65);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 1200;
+}
+
+.suggest-modal.open {
+    display: flex;
+    animation: fadeIn 0.2s ease;
+}
+
+.suggest-modal-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 26px 24px 24px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+#suggest-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--soft);
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+#suggest-modal-close:hover {
+    background: var(--purple);
+    color: #fff;
+}
+
+.suggest-modal-dialog h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    margin: 4px 0 6px;
+}
+
+.suggest-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 16px;
+}
+
+#suggest-song-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#suggest-song-form input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    font: 500 13.5px 'Plus Jakarta Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+#suggest-song-form input:focus {
+    border-color: var(--purple);
+}
+
+#suggest-song-form button[type="submit"] {
+    margin-top: 4px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--purple), #a382d8);
+    color: #fff;
+    font: 700 13.5px 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(139, 107, 190, 0.28);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+#suggest-song-form button[type="submit"]:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
 /* Toast Notification */
 .toast {
     position: fixed;

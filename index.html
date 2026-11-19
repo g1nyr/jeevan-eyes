@@ -105,9 +105,7 @@
                 </div>
                 <div class="player-controls">
                     <button id="play-pause-btn" aria-label="Play or pause 30s preview" title="Play / Pause preview (Space)">▶</button>
-                    <button id="refresh-track-btn" class="track-nav-btn" aria-label="Refresh current track" title="Refresh track">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
-                    </button>
+                    <button id="suggest-song-btn" class="suggest-song-btn" aria-label="Suggest a song" title="Suggest a song to Jeevan">+ Suggest</button>
                     <div class="equalizer" id="equalizer">
                         <i></i><i></i><i></i><i></i>
                     </div>
@@ -220,6 +218,24 @@
                 <button id="blog-modal-prev" class="blog-nav-btn">← Previous post</button>
                 <button id="blog-modal-next" class="blog-nav-btn">Next post →</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Suggest Song Modal -->
+    <div id="suggest-modal" class="suggest-modal" aria-hidden="true" role="dialog" aria-labelledby="suggest-modal-title">
+        <div class="suggest-modal-dialog">
+            <button id="suggest-modal-close" aria-label="Close suggest song modal">×</button>
+            <p class="label">♫ SONG RECOMMENDATION</p>
+            <h2 id="suggest-modal-title">Suggest a Song</h2>
+            <p class="suggest-sub">Drop a track you think Jeevan should listen to next.</p>
+            <form id="suggest-song-form" action="https://formsubmit.co/jeevannayyar0@gmail.com" method="POST">
+                <input type="hidden" name="_subject" value="New Song Suggestion on Jeevan's Eyes"/>
+                <input type="hidden" name="_captcha" value="false"/>
+                <input type="text" name="song_title" placeholder="Song name *" required/>
+                <input type="url" name="song_link" placeholder="Spotify or YT Music link (optional)"/>
+                <input type="text" name="suggested_by" placeholder="Your name (optional)"/>
+                <button type="submit">Send suggestion →</button>
+            </form>
         </div>
     </div>
 

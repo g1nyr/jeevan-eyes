@@ -299,6 +299,10 @@ renderBlogCards();
 
 // Combined Keyboard Navigation (Lightbox + Blog Reader Modal + Spacebar Music Toggle)
 window.onkeydown = (e) => {
+    if (suggestModal && suggestModal.classList.contains('open')) {
+        if (e.key === 'Escape') closeSuggestModal();
+        return;
+    }
     if (blogModal && blogModal.classList.contains('open')) {
         if (e.key === 'Escape') closeBlogModal();
         if (e.key === 'ArrowLeft' && currentPostIndex > 0) openBlogModal(currentPostIndex - 1);
@@ -421,7 +425,7 @@ const musicStatusLabel = document.querySelector('#music-status-label');
 const spotifyExternalLink = document.querySelector('#spotify-external-link');
 const ytmExternalLink = document.querySelector('#ytm-external-link');
 const playPauseBtn = document.querySelector('#play-pause-btn');
-const refreshTrackBtn = document.querySelector('#refresh-track-btn');
+const suggestSongBtn = document.querySelector('#suggest-song-btn');
 const trackCoverEl = document.querySelector('#track-cover');
 const trackTitleEl = document.querySelector('#track-title');
 const trackArtistEl = document.querySelector('#track-artist');
@@ -698,10 +702,38 @@ if (playPauseBtn) {
     };
 }
 
-if (refreshTrackBtn) {
-    refreshTrackBtn.onclick = (e) => {
+const suggestModal = document.querySelector('#suggest-modal');
+const suggestModalClose = document.querySelector('#suggest-modal-close');
+const suggestSongForm = document.querySelector('#suggest-song-form');
+
+function openSuggestModal() {
+    if (!suggestModal) return;
+    suggestModal.classList.add('open');
+    suggestModal.setAttribute('aria-hidden', 'false');
+    const firstInput = suggestModal.querySelector('input[name="song_title"]');
+    if (firstInput) setTimeout(() => firstInput.focus(), 50);
+}
+
+function closeSuggestModal() {
+    if (!suggestModal) return;
+    suggestModal.classList.remove('open');
+    suggestModal.setAttribute('aria-hidden', 'true');
+}
+
+if (suggestSongBtn) {
+    suggestSongBtn.onclick = (e) => {
         e.stopPropagation();
-        syncLiveScrobble(true);
+        openSuggestModal();
+    };
+}
+
+if (suggestModalClose) {
+    suggestModalClose.onclick = () => closeSuggestModal();
+}
+
+if (suggestModal) {
+    suggestModal.onclick = (e) => {
+        if (e.target === suggestModal) closeSuggestModal();
     };
 }
 
@@ -791,6 +823,51 @@ if (contactForm && toast) {
         } catch (err) {
             console.error('FormSubmit error:', err);
             toast.textContent = 'Check Gmail to activate FormSubmit or try again!';
+            toast.classList.add('show');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+    };
+}
+
+// ============================================================================
+// 12. SUGGEST SONG FORM SUBMISSION VIA FORMSUBMIT AJAX
+// ============================================================================
+if (suggestSongForm && toast) {
+    suggestSongForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const submitBtn = suggestSongForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.textContent : 'Send suggestion →';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+        }
+
+        const formData = new FormData(suggestSongForm);
+        try {
+            const response = await fetch('https://formsubmit.co/ajax/jeevannayyar0@gmail.com', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: formData
+            });
+            const result = await response.json();
+            if (response.ok && (result.success === 'true' || result.success === true)) {
+                toast.textContent = 'Song suggestion sent to Jeevan! ♫';
+                toast.classList.add('show');
+                suggestSongForm.reset();
+                closeSuggestModal();
+            } else {
+                throw new Error(result.message || 'Submission failed');
+            }
+        } catch (err) {
+            console.error('Song suggestion error:', err);
+            toast.textContent = 'Could not send right now — try again!';
             toast.classList.add('show');
         } finally {
             if (submitBtn) {
