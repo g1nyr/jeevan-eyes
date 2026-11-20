@@ -15,7 +15,8 @@
 <body>
     <header>
         <a class="logo" href="#home">Jeevan’s <em>Ey<span class="es-eyes-wrap"><img src="assets/photos/eyes-icon.png" alt="" class="eyes-logo-img"/>es</span></em></a>
-        <nav>
+        <nav id="main-nav">
+            <span class="nav-pill" id="nav-pill" aria-hidden="true"></span>
             <a href="#home" class="active">Home</a>
             <a href="#blog">Blog</a>
             <a href="#photos">Photos</a>
@@ -73,7 +74,8 @@
                 <span><i></i> Currently online</span>
             </article>
 
-            <article class="card weather">
+            <article class="card weather" id="weather-card">
+                <div class="weather-fx" id="weather-fx" aria-hidden="true"></div>
                 <div class="weather-top">
                     <p class="label" id="weather-label">☁ WEATHER</p>
                     <span class="ist-clock" id="ist-clock" title="Hyderabad Local Time (IST)">--:-- IST</span>
@@ -231,8 +233,9 @@
             <form id="suggest-song-form" action="https://formsubmit.co/jeevannayyar0@gmail.com" method="POST">
                 <input type="hidden" name="_subject" value="New Song Suggestion on Jeevan's Eyes"/>
                 <input type="hidden" name="_captcha" value="false"/>
+                <input type="hidden" name="_template" value="table"/>
                 <input type="text" name="song_title" placeholder="Song name *" required/>
-                <input type="url" name="song_link" placeholder="Spotify or YT Music link (optional)"/>
+                <input type="text" name="song_link" placeholder="Spotify or YT Music link (optional)"/>
                 <input type="text" name="suggested_by" placeholder="Your name (optional)"/>
                 <button type="submit">Send suggestion →</button>
             </form>

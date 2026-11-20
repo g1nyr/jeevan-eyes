@@ -84,17 +84,40 @@ header {
 }
 
 nav {
-    display: flex;
-    gap: 40px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     justify-content: center;
-    flex: 1;
+    background: var(--soft);
+    padding: 5px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+
+.nav-pill {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    height: calc(100% - 10px);
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), width 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 0;
 }
 
 nav a {
+    position: relative;
+    z-index: 1;
     color: var(--muted);
     text-decoration: none;
     font-weight: 700;
-    transition: color 0.2s;
+    font-size: 13.5px;
+    padding: 7px 18px;
+    border-radius: 999px;
+    transition: color 0.25s ease;
 }
 
 nav a:hover,
@@ -1274,6 +1297,190 @@ h1 span {
 #suggest-song-form button[type="submit"]:hover {
     transform: translateY(-1px);
     opacity: 0.95;
+}
+
+
+/* Animated Weather Card Background Effects */
+.weather {
+    position: relative;
+    overflow: hidden;
+    transition: background 0.6s ease, border-color 0.6s ease;
+}
+
+.weather > *:not(.weather-fx) {
+    position: relative;
+    z-index: 2;
+}
+
+.weather-fx {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+/* Raining animation */
+.weather.weather-rain {
+    background: linear-gradient(160deg, rgba(84, 134, 198, 0.16), rgba(46, 78, 128, 0.10)), var(--card);
+    border-color: rgba(92, 152, 224, 0.38);
+}
+
+.weather-fx .raindrop {
+    position: absolute;
+    top: -24px;
+    width: 1.8px;
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(to bottom, transparent, rgba(110, 175, 245, 0.78));
+    animation: rainFall linear infinite;
+}
+
+.weather-fx .lightning-flash {
+    position: absolute;
+    inset: 0;
+    background: rgba(215, 232, 255, 0.26);
+    opacity: 0;
+    animation: thunderFlash 7s infinite;
+}
+
+@keyframes rainFall {
+    0% {
+        transform: translateY(-20px) translateX(0);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.9;
+    }
+    85% {
+        opacity: 0.85;
+    }
+    100% {
+        transform: translateY(190px) translateX(-14px);
+        opacity: 0;
+    }
+}
+
+@keyframes thunderFlash {
+    0%, 92%, 96%, 100% { opacity: 0; }
+    93% { opacity: 0.7; }
+    94% { opacity: 0.1; }
+    95% { opacity: 0.85; }
+}
+
+/* Cloudy / Misty animation */
+.weather.weather-cloudy {
+    background: linear-gradient(155deg, rgba(164, 178, 204, 0.16), rgba(130, 145, 172, 0.08)), var(--card);
+    border-color: rgba(154, 168, 196, 0.34);
+}
+
+.weather-fx .cloud-puff {
+    position: absolute;
+    background: rgba(185, 198, 220, 0.34);
+    border-radius: 999px;
+    filter: blur(4px);
+    animation: cloudDrift ease-in-out infinite alternate;
+}
+
+[data-theme="dark"] .weather-fx .cloud-puff {
+    background: rgba(180, 195, 225, 0.14);
+}
+
+.weather-fx .cloud-puff::before,
+.weather-fx .cloud-puff::after {
+    content: '';
+    position: absolute;
+    background: inherit;
+    border-radius: 50%;
+}
+
+.weather-fx .cloud-puff::before {
+    width: 52%;
+    height: 150%;
+    top: -65%;
+    left: 16%;
+}
+
+.weather-fx .cloud-puff::after {
+    width: 42%;
+    height: 125%;
+    top: -45%;
+    right: 16%;
+}
+
+@keyframes cloudDrift {
+    0% { transform: translateX(-12px); }
+    100% { transform: translateX(18px); }
+}
+
+/* Clear Sunny Glow animation */
+.weather.weather-sunny {
+    background: radial-gradient(circle at 86% 18%, rgba(255, 196, 86, 0.24), transparent 62%), var(--card);
+    border-color: rgba(245, 178, 72, 0.35);
+}
+
+.weather-fx .sun-orb {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 204, 92, 0.45), rgba(255, 180, 64, 0.06) 70%, transparent);
+    animation: sunPulse 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes sunPulse {
+    0% { transform: scale(0.94); opacity: 0.75; }
+    100% { transform: scale(1.12); opacity: 1; }
+}
+
+/* Clear Night Starlight animation */
+.weather.weather-night {
+    background: radial-gradient(circle at 86% 18%, rgba(132, 108, 224, 0.24), transparent 64%), var(--card);
+    border-color: rgba(139, 107, 190, 0.36);
+}
+
+.weather-fx .night-star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(196, 176, 255, 0.85);
+    box-shadow: 0 0 6px rgba(196, 176, 255, 0.7);
+    animation: starTwinkle ease-in-out infinite alternate;
+}
+
+@keyframes starTwinkle {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Smooth View Transitions for Dashboard & Subpages */
+@keyframes viewFadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.992);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dashboard.view-enter,
+.page.active-page {
+    animation: viewFadeSlide 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (max-width: 760px) {
+    .nav-pill {
+        display: none;
+    }
+    nav {
+        border-radius: 22px;
+    }
 }
 
 /* Toast Notification */

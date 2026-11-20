@@ -345,10 +345,61 @@ themeToggle.onclick = () => {
 // ============================================================================
 // 7. LIVE MEHDIPATNAM WEATHER (OPEN-METEO) & IST CLOCK
 // ============================================================================
+const weatherCardEl = document.querySelector('#weather-card');
+const weatherFxEl = document.querySelector('#weather-fx');
 const istClockEl = document.querySelector('#ist-clock');
 const weatherLabelEl = document.querySelector('#weather-label');
 const weatherTempEl = document.querySelector('#weather-temp');
 const weatherDescEl = document.querySelector('#weather-desc');
+
+function renderWeatherBackground(code, isDay) {
+    if (!weatherCardEl || !weatherFxEl) return;
+    weatherCardEl.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rain', 'weather-night');
+    weatherFxEl.innerHTML = '';
+
+    const isThunder = [95, 96, 99].includes(code);
+    const isRain = isThunder || [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code);
+    const isCloudy = [2, 3, 45, 48].includes(code);
+
+    if (isRain) {
+        weatherCardEl.classList.add('weather-rain');
+        let dropsHtml = '';
+        for (let i = 0; i < 22; i++) {
+            const left = (i * 4.7 + (i % 3) * 1.5) % 100;
+            const delay = ((i * 0.19) % 1.4).toFixed(2);
+            const dur = (0.65 + (i % 5) * 0.11).toFixed(2);
+            dropsHtml += `<span class="raindrop" style="left:${left}%; animation-delay:${delay}s; animation-duration:${dur}s;"></span>`;
+        }
+        if (isThunder) {
+            dropsHtml += '<span class="lightning-flash"></span>';
+        }
+        weatherFxEl.innerHTML = dropsHtml;
+    } else if (isCloudy) {
+        weatherCardEl.classList.add('weather-cloudy');
+        weatherFxEl.innerHTML = `
+            <span class="cloud-puff" style="width:74px; height:22px; top:20%; right:12%; animation-duration:5.5s;"></span>
+            <span class="cloud-puff" style="width:92px; height:26px; top:54%; right:28%; animation-duration:7.2s; animation-delay:-2s;"></span>
+            <span class="cloud-puff" style="width:62px; height:18px; bottom:16%; left:18%; animation-duration:6.1s; animation-delay:-1s;"></span>
+        `;
+    } else if (!isDay) {
+        weatherCardEl.classList.add('weather-night');
+        const stars = [
+            { top: '18%', right: '14%', dur: '2.4s', delay: '0s' },
+            { top: '34%', right: '26%', dur: '3.1s', delay: '0.7s' },
+            { top: '22%', right: '38%', dur: '2.8s', delay: '1.3s' },
+            { top: '52%', right: '16%', dur: '3.5s', delay: '0.4s' },
+            { top: '66%', right: '32%', dur: '2.6s', delay: '1.1s' },
+            { top: '28%', left: '46%', dur: '3.2s', delay: '0.9s' }
+        ];
+        weatherFxEl.innerHTML = stars.map(s => {
+            const pos = s.right ? `right:${s.right};` : `left:${s.left};`;
+            return `<span class="night-star" style="top:${s.top}; ${pos} animation-duration:${s.dur}; animation-delay:${s.delay};"></span>`;
+        }).join('');
+    } else {
+        weatherCardEl.classList.add('weather-sunny');
+        weatherFxEl.innerHTML = '<span class="sun-orb"></span>';
+    }
+}
 
 function updateISTClock() {
     if (!istClockEl) return;
@@ -380,22 +431,26 @@ function describeWeatherCode(code) {
 async function fetchMehdipatnamWeather() {
     if (!weatherTempEl || !weatherDescEl) return;
     try {
-        const url = 'https://api.open-meteo.com/v1/forecast?latitude=17.3951&longitude=78.4402&current=temperature_2m,weather_code&timezone=Asia%2FKolkata';
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=17.3951&longitude=78.4402&current=temperature_2m,weather_code,is_day&timezone=Asia%2FKolkata';
         const res = await fetch(url);
         if (!res.ok) throw new Error('Weather fetch failed');
         const data = await res.json();
         if (data && data.current) {
             const temp = Math.round(data.current.temperature_2m);
-            const info = describeWeatherCode(data.current.weather_code);
-            if (weatherLabelEl) weatherLabelEl.textContent = `${info.icon} WEATHER`;
+            const code = data.current.weather_code;
+            const isDay = data.current.is_day === 1;
+            const info = describeWeatherCode(code);
+            if (weatherLabelEl) weatherLabelEl.textContent = `${!isDay && code <= 2 ? '🌙' : info.icon} WEATHER`;
             weatherTempEl.textContent = `${temp}°C`;
             weatherDescEl.textContent = `Mehdipatnam · ${info.text}`;
+            renderWeatherBackground(code, isDay);
         }
     } catch (err) {
         console.warn('Using fallback weather display:', err);
     }
 }
 
+renderWeatherBackground(2, true);
 fetchMehdipatnamWeather();
 setInterval(fetchMehdipatnamWeather, 600000); // Refresh every 10 minutes
 
@@ -735,32 +790,57 @@ syncLiveScrobble(true);
 setInterval(() => syncLiveScrobble(false), LIVE_MUSIC_CONFIG.pollIntervalMs || 45000);
 
 // ============================================================================
-// 10. NAVIGATION TAB ROUTING
+// 10. NAVIGATION TAB ROUTING, SLIDING ACTIVE PILL & SMOOTH VIEW TRANSITIONS
 // ============================================================================
 const navLinks = document.querySelectorAll('nav a');
+const navPill = document.querySelector('#nav-pill');
 const dashboard = document.querySelector('.dashboard');
 const aside = document.querySelector('aside');
 const pages = document.querySelectorAll('.page');
 
+function positionNavPill(activeLink) {
+    if (!navPill || !activeLink) return;
+    if (window.innerWidth <= 760) {
+        navPill.style.opacity = '0';
+        return;
+    }
+    navPill.style.opacity = '1';
+    navPill.style.width = `${activeLink.offsetWidth}px`;
+    navPill.style.transform = `translateX(${activeLink.offsetLeft - 5}px)`;
+}
+
 function handleRouting() {
     const hash = window.location.hash || '#home';
+    let activeLink = null;
     navLinks.forEach(link => {
         if (link.getAttribute('href') === hash) {
             link.classList.add('active');
+            activeLink = link;
         } else {
             link.classList.remove('active');
         }
     });
+    positionNavPill(activeLink || navLinks[0]);
 
     if (hash === '#home') {
-        if (dashboard) dashboard.style.display = 'grid';
+        if (dashboard) {
+            dashboard.style.display = 'grid';
+            dashboard.classList.remove('view-enter');
+            void dashboard.offsetWidth;
+            dashboard.classList.add('view-enter');
+        }
         if (aside) aside.style.display = 'block';
         pages.forEach(p => p.classList.remove('active-page'));
     } else {
-        if (dashboard) dashboard.style.display = 'none';
+        if (dashboard) {
+            dashboard.style.display = 'none';
+            dashboard.classList.remove('view-enter');
+        }
         if (aside) aside.style.display = 'block';
         pages.forEach(p => {
             if ('#' + p.id === hash) {
+                p.classList.remove('active-page');
+                void p.offsetWidth;
                 p.classList.add('active-page');
             } else {
                 p.classList.remove('active-page');
@@ -771,7 +851,16 @@ function handleRouting() {
 }
 
 window.onhashchange = handleRouting;
-window.onload = handleRouting;
+window.addEventListener('resize', () => {
+    const currentActive = document.querySelector('nav a.active');
+    positionNavPill(currentActive);
+});
+window.onload = () => {
+    handleRouting();
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => positionNavPill(document.querySelector('nav a.active')));
+    }
+};
 
 // Mobile Menu Toggle
 const menu = document.querySelector('#menu');
